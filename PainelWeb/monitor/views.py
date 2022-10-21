@@ -49,7 +49,60 @@ def traffic_monitor(request):
         "ram_usage": ram_usage,
         "dataSaved": page1,
     }
+
+    consulta = pd.read_excel(caminho_Arquivo)
+    consulta_livre = consulta[(consulta['STATUS'].isnull())]
+
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    erro = ''
+    for ind_base, linha2 in consulta_livre.iterrows():
+        ######## CONSULTA
+        Url = linha2["ISSWEB"]
+        country = linha2['MUNICIPIO']
+    
+        print(f"{country}\n")
+        try:
+            #for i in range(1, n):
+            url = Url #sys.argv[i]
+            if validators.url(url) is True:
+                status = requests.head(url).status_code
+                try:
+                    print(url, status,responses[status], "\n")
+
+                except:
+                    print(url, status, "Not an Standard HTTP Response code\n")
+                    sg.popup_error(f'{status}')
+            else:
+                print(url, "Not an valid URL\n")
+                continue
+            time.sleep(1)
+        except Exception as er:
+            sg.popup_error('Site Off')
+            erro = 'Site Off'
+            print(f'Uma tentativa de conexão falhou porque o componente conectado não respondeu corretamente após um período de tempo ou a conexão estabelecida falhou porque o host conectado não respondeu')
+        
+        now = datetime.now()
+        datetimenow = now.strftime("%Y-%m-%d")
+        saveNow = Monitor(
+        continent=status,
+        country=country,
+        capital='capital',
+        city=erro,
+        datetime=datetimenow,
+        ip=url
+        )
+        saveNow.save()
     return render(request, 'traffic_monitor.html', data)
+
+
+
+
+
+
 #home page
 def home(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
